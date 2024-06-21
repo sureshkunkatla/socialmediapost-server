@@ -2,15 +2,10 @@ const express = require("express");
 const router = express.Router();
 const { Comments } = require("../models");
 
-// router.get("/", async (req, res) => {
-//   const getAllPosts = await Posts.findAll();
-//   res.json(getAllPosts);
-// });
-
 router.post("/", async (req, res) => {
   const comment = req.body;
-  await Comments.create(comment);
-  res.json(comment);
+  const createComment = await Comments.create(comment);
+  res.json(createComment);
 });
 
 router.get("/:postId", async (req, res) => {

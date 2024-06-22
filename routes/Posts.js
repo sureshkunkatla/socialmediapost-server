@@ -3,7 +3,7 @@ const router = express.Router();
 const { Posts } = require("../models");
 const { validateToken } = require("../middlewares/authMiddleware");
 
-router.get("/", async (req, res) => {
+router.get("/", validateToken, async (req, res) => {
   const getAllPosts = await Posts.findAll();
   res.json(getAllPosts);
 });
@@ -18,7 +18,7 @@ router.post("/", validateToken, async (req, res) => {
   }
 });
 
-router.get("/byId/:id", async (req, res) => {
+router.get("/byId/:id", validateToken, async (req, res) => {
   const id = req.params.id;
   const post = await Posts.findByPk(id);
   res.json(post);

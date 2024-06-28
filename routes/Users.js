@@ -20,6 +20,24 @@ router.post("/", async (req, res) => {
   });
 });
 
+router.put("/userInfo/:id/bio", async (req, res) => {
+  const userId = req.params.id;
+  const { userBio } = req.body;
+
+  try {
+    const updateUserBio = await Users.update(
+      { userBio: userBio },
+      { where: { id: userId } }
+    );
+    if (updateUserBio) {
+      return res.status(200).json({ message: "User bio updated successfully" });
+    }
+  } catch (error) {
+    console.error("Error updating user bio:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/userInfo/:id", async (req, res) => {
   const id = req.params.id;
   const user = await Users.findOne({

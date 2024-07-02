@@ -1,17 +1,63 @@
 const express = require("express");
 const router = express.Router();
-const { Posts, Likes } = require("../models");
+const { Posts, Likes, Comments } = require("../models");
 const { validateToken } = require("../middlewares/authMiddleware");
+const { Sequelize } = require("sequelize");
+// const Sequelize = require("sequelize");
+
+// router.get("/", validateToken, async (req, res) => {
+//   const UserId = req.user.id; // Assuming you have access to the user ID from the token
+//   const getAllPosts = await Posts.findAll({ include: [Likes, Comments] });
+//   const postsWithUserLiked = getAllPosts.map((post) => ({
+//     ...post.toJSON(),
+//     userLiked: post.Likes.some((like) => like.UserId === UserId), // true if user liked, false otherwise
+//     likesCount: post.Likes.length,
+//     commentsCount: post.Comments.length,
+//   }));
+
+//   res.json(postsWithUserLiked);
+// });
 
 router.get("/", validateToken, async (req, res) => {
-  const UserId = req.user.id; // Assuming you have access to the user ID from the token
-  const getAllPosts = await Posts.findAll({ include: [Likes] });
-  const postsWithUserLiked = getAllPosts.map((post) => ({
-    ...post.toJSON(),
-    userLiked: post.Likes.some((like) => like.UserId === UserId), // true if user liked, false otherwise
-  }));
+  try {
+    const UserId = req.user.id; // Assuming you have access to the user ID from the token
 
-  res.json(postsWithUserLiked);
+    // Retrieve only necessary columns from Posts (excluding Likes and Comments)
+    const getAllPosts = await Posts.findAll({
+      attributes: [
+        "id",
+        "title",
+        "postText",
+        "username",
+        "createdAt",
+        "updatedAt",
+      ],
+    });
+
+    // Fetch likes count and comments count separately for each post
+    const postsWithCounts = await Promise.all(
+      getAllPosts.map(async (post) => {
+        const likesCount = await Likes.count({ where: { PostId: post.id } });
+        const commentsCount = await Comments.count({
+          where: { PostId: post.id },
+        });
+
+        return {
+          ...post.toJSON(),
+          userLiked:
+            (await Likes.findOne({ where: { PostId: post.id, UserId } })) !==
+            null,
+          likesCount,
+          commentsCount,
+        };
+      })
+    );
+
+    res.json(postsWithCounts);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/", validateToken, async (req, res) => {

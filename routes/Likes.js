@@ -8,7 +8,6 @@ router.post("/", validateToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Create a new like entry in the Likes table
     const alreadyLikes = await Likes.findOne({
       where: {
         PostId: PostId,
@@ -29,7 +28,6 @@ router.post("/", validateToken, async (req, res) => {
       }
     }
   } catch (error) {
-    // Handle any errors that occur during the creation process
     console.error(error);
     res
       .status(500)

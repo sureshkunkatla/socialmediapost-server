@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Users, Posts, Likes } = require("../models");
+const { Users, Posts, Likes, Comments } = require("../models");
 const bycrpt = require("bcrypt");
 const { sign } = require("jsonwebtoken");
 
@@ -46,13 +46,25 @@ router.get("/userInfo/:id", async (req, res) => {
   });
   const userRelatedPosts = await Posts.findAll({
     where: { UserId: id },
-    include: [Likes],
+    order: [["createdAt", "DESC"]],
   });
 
-  const postsWithUserLiked = userRelatedPosts.map((post) => ({
-    ...post.toJSON(),
-    userLiked: post.Likes.some((like) => like.UserId === id), // true if user liked, false otherwise
-  }));
+  const postsWithUserLiked = await Promise.all(
+    userRelatedPosts.map(async (post) => {
+      const likesCount = await Likes.count({ where: { PostId: post.id } });
+      const commentsCount = await Comments.count({
+        where: { PostId: post.id },
+      });
+      return {
+        ...post.toJSON(),
+        userLiked:
+          (await Likes.findOne({ where: { PostId: post.id, UserId: id } })) !==
+          null, // true if user liked, false otherwise
+        likesCount,
+        commentsCount,
+      };
+    })
+  );
   return res.json({ user: user, userRelatedPosts: postsWithUserLiked });
 });
 

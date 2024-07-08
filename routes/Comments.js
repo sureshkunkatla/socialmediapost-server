@@ -27,7 +27,7 @@ router.get("/:postId", validateToken, async (req, res) => {
     if (comments.length > 0) {
       res.json(comments);
     } else {
-      res.status(404).json({ error: "No comments found for this post" });
+      res.json({ message: "No comments found for this post" });
     }
   } catch (error) {
     console.error("Error fetching comments:", error);

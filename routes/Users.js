@@ -3,6 +3,7 @@ const router = express.Router();
 const { Users, Posts, Likes, Comments } = require("../models");
 const bycrpt = require("bcrypt");
 const { sign } = require("jsonwebtoken");
+const { validateToken } = require("../middlewares/authMiddleware");
 
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
@@ -20,7 +21,7 @@ router.post("/", async (req, res) => {
   });
 });
 
-router.put("/userInfo/:id/bio", async (req, res) => {
+router.put("/userInfo/:id/bio", validateToken, async (req, res) => {
   const userId = req.params.id;
   const { userBio } = req.body;
 
@@ -38,8 +39,9 @@ router.put("/userInfo/:id/bio", async (req, res) => {
   }
 });
 
-router.get("/userInfo/:id", async (req, res) => {
+router.get("/userInfo/:id", validateToken, async (req, res) => {
   const id = req.params.id;
+  const userId = req.user.id;
   const user = await Users.findOne({
     where: { id: id },
     attributes: { exclude: ["password"] }, // Exclude the password column
@@ -58,8 +60,9 @@ router.get("/userInfo/:id", async (req, res) => {
       return {
         ...post.toJSON(),
         userLiked:
-          (await Likes.findOne({ where: { PostId: post.id, UserId: id } })) !==
-          null, // true if user liked, false otherwise
+          (await Likes.findOne({
+            where: { PostId: post.id, UserId: userId },
+          })) !== null, // true if user liked, false otherwise
         likesCount,
         commentsCount,
       };
